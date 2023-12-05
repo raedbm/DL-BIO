@@ -1,4 +1,3 @@
-# This code is modified from https://github.com/dragen1860/MAML-Pytorch and https://github.com/katerakelly/pytorch-maml
 import numpy as np
 import torch
 import torch.nn as nn
@@ -9,9 +8,9 @@ from backbones.blocks import Linear_fw
 from methods.meta_template import MetaTemplate
 
 
-class MAML(MetaTemplate):
+class ANIL(MetaTemplate):
     def __init__(self, backbone, n_way, n_support, n_task, task_update_num, inner_lr, approx=False):
-        super(MAML, self).__init__(backbone, n_way, n_support, change_way=False)
+        super(ANIL, self).__init__(backbone, n_way, n_support, change_way=False)
 
         self.classifier = Linear_fw(self.feat_dim, n_way)
         self.classifier.bias.data.fill_(0)
@@ -65,10 +64,13 @@ class MAML(MetaTemplate):
         if torch.cuda.is_available():
             y_a_i = y_a_i.cuda()
 
-        fast_parameters = list(self.parameters())  # the first gradient calcuated in line 45 is based on original weight
+        fast_parameters = list(self.classifier.parameters())  # the first gradient calcuated in line 45 is based on original weight
+
         for weight in self.parameters():
-            weight.fast = None
+            if not isinstance(weight, Linear_fw):  # Keep non-classifier weights unchanged
+                weight.fast = None
         self.zero_grad()
+
         for task_step in range(self.task_update_num):
             scores = self.forward(x_a_i)
             set_loss = self.loss_fn(scores, y_a_i)
@@ -78,7 +80,7 @@ class MAML(MetaTemplate):
                 grad = [g.detach() for g in
                         grad]  # do not calculate gradient of gradient if using first order approximation
             fast_parameters = []
-            for k, weight in enumerate(self.parameters()):
+            for k, weight in enumerate(self.classifier.parameters()):
                 # for usage of weight.fast, please see Linear_fw, Conv_fw in blocks.py
                 if weight.fast is None:
                     weight.fast = weight - self.inner_lr * grad[k]  # create weight.fast
