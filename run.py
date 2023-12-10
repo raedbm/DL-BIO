@@ -4,6 +4,7 @@ from hydra.utils import instantiate
 from math import ceil
 from omegaconf import OmegaConf
 from prettytable import PrettyTable
+import multiprocessing as mp
 
 from datasets.cell.tabula_muris import *
 from utils.io_utils import get_resume_file, hydra_setup, fix_seed, model_to_dict, opt_to_dict, get_model_file
@@ -39,7 +40,7 @@ def initialize_dataset_model(cfg):
     if torch.cuda.is_available():
         model = model.cuda()
 
-    if cfg.method.name == 'maml':
+    if cfg.method.name == 'maml' or cfg.method.name == 'anil':
         cfg.method.stop_epoch *= model.n_task  # maml use multiple tasks in one update
 
     return train_loader, val_loader, model
@@ -179,6 +180,7 @@ def test(cfg, model, split):
 
 
 if __name__ == '__main__':
+    mp.set_start_method('spawn') 
     hydra_setup()
     run()
     wandb.finish()

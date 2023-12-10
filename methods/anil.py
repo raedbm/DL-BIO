@@ -64,7 +64,7 @@ class ANIL(MetaTemplate):
         if torch.cuda.is_available():
             y_a_i = y_a_i.cuda()
 
-        fast_parameters = list(self.classifier.parameters())  # the first gradient calcuated in line 45 is based on original weight
+        fast_parameters = list(self.classifier.parameters())  # Only classifier parameters are updated
 
         for weight in self.parameters():
             if not isinstance(weight, Linear_fw):  # Keep non-classifier weights unchanged
@@ -76,10 +76,12 @@ class ANIL(MetaTemplate):
             set_loss = self.loss_fn(scores, y_a_i)
             grad = torch.autograd.grad(set_loss, fast_parameters, create_graph=True)  # build full graph support gradient of gradient
             if self.approx:
-                # Verify implementation of MAML approx -- currently not good results on TM
+                # Verify implementation of ANIL approx -- currently not good results on TM
                 grad = [g.detach() for g in
                         grad]  # do not calculate gradient of gradient if using first order approximation
+
             fast_parameters = []
+            # Only update the classifier parameters
             for k, weight in enumerate(self.classifier.parameters()):
                 # for usage of weight.fast, please see Linear_fw, Conv_fw in blocks.py
                 if weight.fast is None:
@@ -124,11 +126,11 @@ class ANIL(MetaTemplate):
             if isinstance(x, list):
                 self.n_query = x[0].size(1) - self.n_support
                 assert self.n_way == x[0].size(
-                    0), f"MAML do not support way change, n_way is {self.n_way} but x.size(0) is {x.size(0)}"
+                    0), f"ANIL do not support way change, n_way is {self.n_way} but x.size(0) is {x.size(0)}"
             else:
                 self.n_query = x.size(1) - self.n_support
                 assert self.n_way == x.size(
-                    0), f"MAML do not support way change, n_way is {self.n_way} but x.size(0) is {x.size(0)}"
+                    0), f"ANIL do not support way change, n_way is {self.n_way} but x.size(0) is {x.size(0)}"
 
             # Labels are assigned later if classification task
             if self.type == "classification":
@@ -140,7 +142,7 @@ class ANIL(MetaTemplate):
 
             task_count += 1
 
-            if task_count == self.n_task:  # MAML update several tasks at one time
+            if task_count == self.n_task:  # ANIL update several tasks at one time
                 loss_q = torch.stack(loss_all).sum(0)
                 loss_q.backward()
 
@@ -162,10 +164,10 @@ class ANIL(MetaTemplate):
         for i, (x, y) in enumerate(test_loader):
             if isinstance(x, list):
                 self.n_query = x[0].size(1) - self.n_support
-                assert self.n_way == x[0].size(0), "MAML do not support way change"
+                assert self.n_way == x[0].size(0), "ANIL do not support way change"
             else:
                 self.n_query = x.size(1) - self.n_support
-                assert self.n_way == x.size(0), "MAML do not support way change"
+                assert self.n_way == x.size(0), "ANIL do not support way change"
 
             if self.type == "classification":
                 correct_this, count_this = self.correct(x)
