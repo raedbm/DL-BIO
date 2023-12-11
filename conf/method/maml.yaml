@@ -16,3 +16,4 @@ cls:
   n_task: ${method.n_task}
   task_update_num: ${method.task_update_num}
   inner_lr: ${method.maml_inner_lr}
+#  approx: True

@@ -7,6 +7,7 @@ from torch.autograd import Variable
 
 from backbones.blocks import Linear_fw
 from methods.meta_template import MetaTemplate
+import time
 
 
 class MAML(MetaTemplate):
@@ -27,6 +28,7 @@ class MAML(MetaTemplate):
         self.task_update_num = task_update_num
         self.inner_lr = inner_lr
         self.approx = approx  # first order approx.
+
 
     def forward(self, x):
         out = self.feature.forward(x)
@@ -117,6 +119,8 @@ class MAML(MetaTemplate):
         loss_all = []
         optimizer.zero_grad()
 
+        forward_time = []
+
         # train
         for i, (x, y) in enumerate(train_loader):
             if isinstance(x, list):
@@ -131,8 +135,16 @@ class MAML(MetaTemplate):
             # Labels are assigned later if classification task
             if self.type == "classification":
                 y = None
-
+            #####################################
+            torch.cuda.synchronize()
+            t0 = time.time()
+            #####################################
             loss = self.set_forward_loss(x, y)
+            #####################################
+            torch.cuda.synchronize()
+            t1 = time.time()
+            forward_time.append(t1 - t0)
+            #####################################
             avg_loss = avg_loss + loss.item()
             loss_all.append(loss)
 
@@ -141,7 +153,6 @@ class MAML(MetaTemplate):
             if task_count == self.n_task:  # MAML update several tasks at one time
                 loss_q = torch.stack(loss_all).sum(0)
                 loss_q.backward()
-
                 optimizer.step()
                 task_count = 0
                 loss_all = []
@@ -150,14 +161,22 @@ class MAML(MetaTemplate):
                 print('Epoch {:d} | Batch {:d}/{:d} | Loss {:f}'.format(epoch, i, len(train_loader),
                                                                         avg_loss / float(i + 1)))
                 wandb.log({'loss/train': avg_loss / float(i + 1)})
+        wandb.log({"train/time/forward/mean": np.mean(forward_time)})
+        wandb.log({"train/time/forward/std": np.std(forward_time)})
+                
 
     def test_loop(self, test_loader, return_std=False):  # overwrite parrent function
         correct = 0
         count = 0
         acc_all = []
+        time_all = []
 
         iter_num = len(test_loader)
         for i, (x, y) in enumerate(test_loader):
+            #####################################
+            torch.cuda.synchronize()
+            t0 = time.time()
+            #####################################
             if isinstance(x, list):
                 self.n_query = x[0].size(1) - self.n_support
                 assert self.n_way == x[0].size(0), "MAML do not support way change"
@@ -171,7 +190,13 @@ class MAML(MetaTemplate):
             else:
                 # Use pearson correlation
                 acc_all.append(self.correlation(x, y))
-
+            #####################################
+            torch.cuda.synchronize()
+            t1 = time.time()
+            time_all.append(t1 - t0)
+            #####################################    
+        wandb.log({"test/time/forward/mean": np.mean(time_all)})
+        wandb.log({"test/time/forward/std": np.std(time_all)})
         acc_all = np.asarray(acc_all)
         acc_mean = np.mean(acc_all)
         acc_std = np.std(acc_all)
