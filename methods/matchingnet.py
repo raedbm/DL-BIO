@@ -51,13 +51,14 @@ class MatchingNet(MetaTemplate):
         G, G_normalized = self.encode_training_set( z_support)
 
         y_s = torch.from_numpy(np.repeat(range(self.n_way), self.n_support))
+        
         Y_S = Variable(one_hot(y_s, self.n_way)).cuda()
         f = z_query
         logprobs = self.get_logprobs(f, G, G_normalized, Y_S)
         return logprobs
 
     def set_forward_loss(self, x):
-        y_query = torch.from_numpy(np.repeat(range( self.n_way ), self.n_query ))
+        y_query = torch.from_numpy(np.repeat(range( self.n_way ), self.n_query )).long()
         y_query = Variable(y_query.cuda())
 
         logprobs = self.set_forward(x)

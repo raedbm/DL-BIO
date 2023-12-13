@@ -47,7 +47,6 @@ class Baseline(MetaTemplate):
 
     def set_forward_loss(self, x, y):
         scores = self.forward(x)
-        print(scores.shape)
         if self.type == 'classification':
             y = y.long().cuda()
         else:
@@ -148,7 +147,7 @@ class Baseline(MetaTemplate):
                 set_optimizer.zero_grad()
                 selected_id = torch.from_numpy(rand_id[i: min(i + batch_size, support_size)]).cuda()
                 z_batch = z_support[selected_id]
-                y_batch = y_support[selected_id]
+                y_batch = y_support[selected_id].long() 
                 scores = linear_clf(z_batch)
                 loss = loss_function(scores, y_batch)
                 # loss.backward(retain_graph=True)

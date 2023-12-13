@@ -8,6 +8,7 @@ from torch.autograd import Variable
 
 
 def one_hot(y, num_class):
+    y = y.type(torch.LongTensor)
     return torch.zeros((len(y), num_class)).scatter_(1, y.unsqueeze(1), 1)
 
 

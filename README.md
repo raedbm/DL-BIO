@@ -87,6 +87,7 @@ The provided methods include:
 | ProtoNet | [Snell et al. (2017)](https://proceedings.neurips.cc/paper_files/paper/2017/file/cb8da6767461f2812ae4290eac7cbc42-Paper.pdf) |
 | MatchingNet | [Vinyals et al. (2016)](https://proceedings.neurips.cc/paper/2016/file/90e1357833654983612fb05e3ec9148c-Paper.pdf) |
 | MAML | [Finn et al. (2017)](https://proceedings.mlr.press/v70/finn17a/finn17a.pdf) |
+| ANIL | [Raghu et al. (2020)](https://arxiv.org/pdf/1909.09157.pdf) |
 
 
 ## Models

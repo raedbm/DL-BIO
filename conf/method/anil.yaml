@@ -3,7 +3,7 @@ defaults:
 
 name: anil
 n_task: 4
-task_update_num: 1
+task_update_num: 8
 
 anil_inner_lr: 0.01
 

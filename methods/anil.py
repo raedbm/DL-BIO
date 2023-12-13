@@ -202,8 +202,6 @@ class ANIL(MetaTemplate):
             t1 = time.time()
             time_all.append(t1 - t0)
             #####################################
-        wandb.log({"test/time/forward/mean": np.mean(time_all)})
-        wandb.log({"test/time/forward/std": np.std(time_all)})
         acc_all = np.asarray(acc_all)
         acc_mean = np.mean(acc_all)
         acc_std = np.std(acc_all)
